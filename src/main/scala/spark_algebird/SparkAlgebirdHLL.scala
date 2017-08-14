@@ -13,7 +13,7 @@ object SparkAlgebirdHLL {
   val HLL_PRECISION = 18
 
   def main(args: Array[String]): Unit = {
-    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) = initStreamContext("Spark_HLL_Demo")
+    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) = initStreamContext("Spark_HLL_Demo", 1)
     distinctUsers(tweets, HLL_PRECISION)
     startApp(ssc)
   }

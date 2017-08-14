@@ -42,9 +42,9 @@ package object spark_algebird {
     * @param appName application name
     * @return the tuple of StreamingContext ReceiverInputDStream
     */
-  def initStreamContext(appName: String): (StreamingContext, ReceiverInputDStream[Status]) = {
+  def initStreamContext(appName: String, seconds:Int): (StreamingContext, ReceiverInputDStream[Status]) = {
     setupTwitter()
-    val ssc = new StreamingContext("local[*]", appName, Seconds(1))
+    val ssc = new StreamingContext("local[*]", appName, Seconds(seconds))
     setupLogging()
     val tweets = TwitterUtils.createStream(ssc, None)
     (ssc, tweets)
