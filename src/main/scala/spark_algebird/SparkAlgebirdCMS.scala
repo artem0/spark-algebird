@@ -1,18 +1,14 @@
 package spark_algebird
 
 import com.twitter.algebird.{CMS, CountMinSketchMonoid, MapMonoid}
-import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.{DStream, ReceiverInputDStream}
 import twitter4j.Status
 
 object SparkAlgebirdCMS {
 
-  def main(args: Array[String]): Unit = {
-    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) = initStreamContext("Spark_HLL_Demo", 100)
-    userCounter(tweets)
-    startApp(ssc)
-  }
-
+  /**
+    * CMS instance initializer
+    */
   object CountMinSketchMonoidInitializer{
     private val DELTA = 1E-10
     private val EPS = 0.01
@@ -30,11 +26,11 @@ object SparkAlgebirdCMS {
     * leveraging Count–min sketch algorithm from Algebird and compare it to the usual method
     * @param tweets Stream of tweets
     */
-  private def userCounter(tweets: ReceiverInputDStream[Status]) = {
+  def userCounter(tweets: ReceiverInputDStream[Status]): Unit = {
     val USERS_COUNT = 5
     val users: DStream[Long] = tweets.map(status => status.getUser.getId)
 
-    val approxTopUsers = users.mapPartitions(ids => {
+    val approxTopUsers: DStream[CMS] = users.mapPartitions(ids => {
       ids.map(id => COUNT_MIN_SKETCH_MONOID.create(id))
     }).reduce(_ ++ _)
 
@@ -60,7 +56,7 @@ object SparkAlgebirdCMS {
     })
   }
 
-  def exactTopUserInTwitter(exactTopUsers: DStream[(Long, Int)], amountToDisplay:Int) = {
+  private def exactTopUserInTwitter(exactTopUsers: DStream[(Long, Int)], amountToDisplay:Int) = {
     var globalExact = Map[Long, Int]()
     val mm = new MapMonoid[Long, Int]()
     exactTopUsers.foreachRDD(rdd => {
