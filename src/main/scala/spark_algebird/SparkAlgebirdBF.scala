@@ -8,12 +8,6 @@ import twitter4j.Status
 
 object SparkAlgebirdBF {
 
-  def main(args: Array[String]): Unit = {
-    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) = initStreamContext("Spark_HLL_Demo", 120)
-    wordFilteringInTweets(tweets)
-    startApp(ssc)
-  }
-
   /**
     * Accuracy for Bloom Filter
     */
@@ -27,7 +21,7 @@ object SparkAlgebirdBF {
     * for checking and matching of result of BloomFilter and contains method
     * @param tweets Stream of tweets
     */
-  private def wordFilteringInTweets(tweets: ReceiverInputDStream[Status]) = {
+  def wordFilteringInTweets(tweets: ReceiverInputDStream[Status]): Unit = {
     val tweetsText = tweets.map {_.getText}
 
     /**
