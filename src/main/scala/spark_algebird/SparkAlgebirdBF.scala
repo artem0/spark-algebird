@@ -22,13 +22,14 @@ object SparkAlgebirdBF {
     * @param tweets Stream of tweets
     */
   def wordFilteringInTweets(tweets: ReceiverInputDStream[Status]): Unit = {
-    val tweetsText = tweets.map {_.getText}
+    val tweetsText = tweets.map { _.getText }
 
     /**
       * Collect tweets during single batch (specified during streaming context initialization)
       */
-    val splittedTweetsCollector = tweetsText.mapPartitions(_.map(_.split(" "))).reduce(_ ++ _)
-    
+    val splittedTweetsCollector =
+      tweetsText.mapPartitions(_.map(_.split(" "))).reduce(_ ++ _)
+
     splittedTweetsCollector.foreachRDD { rdd =>
       if (rdd.count() != 0) {
 
@@ -39,17 +40,20 @@ object SparkAlgebirdBF {
         val numEntries = splittedTweets.length
 
         val bloomFilter = BloomFilter(numEntries, BLOOM_FILTER_PROBABILITY)
-        val bloomFilterInstance =  bloomFilter.create(splittedTweets:_*)
-        
+        val bloomFilterInstance = bloomFilter.create(splittedTweets: _*)
+
         val wordToCheck = "politic"
-        val bloomFilterResult = bloomFilterInstance.contains(wordToCheck).isTrue
+        val bloomFilterResult =
+          bloomFilterInstance.contains(wordToCheck).isTrue
         val naiveContainsResult = restoredTweets.contains(wordToCheck)
-        if(bloomFilterResult  != naiveContainsResult){
+        if (bloomFilterResult != naiveContainsResult) {
           println("Mistake of BloomFilter - possible collision with hash function for omitting this increase accuracy")
         }
 
-        println(s"Total words in batch ${splittedTweets.length} " +
-          s" BloomFilter result for $wordToCheck --> $bloomFilterResult")
+        println(
+          s"Total words in batch ${splittedTweets.length} " +
+            s" BloomFilter result for $wordToCheck --> $bloomFilterResult"
+        )
       }
     }
   }

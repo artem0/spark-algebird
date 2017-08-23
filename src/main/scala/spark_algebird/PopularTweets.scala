@@ -7,7 +7,8 @@ import twitter4j.Status
 object PopularTweets {
 
   def main(args: Array[String]) {
-    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) = initStreamContext("PopularTweets", 1)
+    val (ssc: StreamingContext, tweets: ReceiverInputDStream[Status]) =
+      initStreamContext("PopularTweets", 1)
     popularTweets(tweets)
     startApp(ssc)
   }

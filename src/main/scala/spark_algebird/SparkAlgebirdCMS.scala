@@ -9,7 +9,7 @@ object SparkAlgebirdCMS {
   /**
     * CMS instance initializer
     */
-  object CountMinSketchMonoidInitializer{
+  object CountMinSketchMonoidInitializer {
     private val DELTA = 1E-10
     private val EPS = 0.01
     private val SEED = 1
@@ -30,12 +30,14 @@ object SparkAlgebirdCMS {
     val USERS_COUNT = 5
     val users: DStream[Long] = tweets.map(status => status.getUser.getId)
 
-    val approxTopUsers: DStream[CMS] = users.mapPartitions(ids => {
-      ids.map(id => COUNT_MIN_SKETCH_MONOID.create(id))
-    }).reduce(_ ++ _)
+    val approxTopUsers: DStream[CMS] = users
+      .mapPartitions(ids => {
+        ids.map(id => COUNT_MIN_SKETCH_MONOID.create(id))
+      })
+      .reduce(_ ++ _)
 
-    val exactTopUsers: DStream[(Long, Int)] = users.map(id => (id, 1))
-      .reduceByKey(_ + _)
+    val exactTopUsers: DStream[(Long, Int)] =
+      users.map(id => (id, 1)).reduceByKey(_ + _)
 
     topTwitterUsersWithCountMinSketch(approxTopUsers, USERS_COUNT)
     exactTopUserInTwitter(exactTopUsers, USERS_COUNT)
@@ -45,24 +47,29 @@ object SparkAlgebirdCMS {
     approxTopUsers.foreachRDD(rdd => {
       if (rdd.count() != 0) {
         val partial = rdd.first()
-        val partialTopK = partial.heavyHitters.map(id =>
-          (id, partial.frequency(id).estimate)).toSeq.sortBy { case (_, amount) => amount }.reverse.slice(0, USERS_COUNT)
+        val partialTopK = partial.heavyHitters.map { id =>
+          (id, partial.frequency(id).estimate)
+        }.toSeq.sortBy { case (_, amount) => amount }.reverse.slice(0, USERS_COUNT)
+
         globalCMS ++= partial
-        val globalTopK = globalCMS.heavyHitters.map(id =>
-          (id, globalCMS.frequency(id).estimate)).toSeq.sortBy { case (_, amount) => amount }.reverse.slice(0, USERS_COUNT)
+        val globalTopK = globalCMS.heavyHitters.map { id =>
+          (id, globalCMS.frequency(id).estimate)
+        }.toSeq.sortBy { case (_, amount) => amount }.reverse.slice(0, USERS_COUNT)
+
         println("CMS --> Top most valuable users this batch: %s".format(partialTopK.mkString("[", ",", "]")))
         println("CMS --> Top most valuable users overall: %s".format(globalTopK.mkString("[", ",", "]")))
       }
     })
   }
 
-  private def exactTopUserInTwitter(exactTopUsers: DStream[(Long, Int)], amountToDisplay:Int) = {
+  private def exactTopUserInTwitter(exactTopUsers: DStream[(Long, Int)], amountToDisplay: Int) = {
     var globalExact = Map[Long, Int]()
     val mm = new MapMonoid[Long, Int]()
     exactTopUsers.foreachRDD(rdd => {
       if (rdd.count() != 0) {
         val partialMap = rdd.collect().toMap
-        val partialTopK = rdd.sortByKey(ascending = false).take(amountToDisplay)
+        val partialTopK =
+          rdd.sortByKey(ascending = false).take(amountToDisplay)
         globalExact = mm.plus(globalExact, partialMap)
         val globalTopK = globalExact.toSeq.sortBy { case (_, amount) => amount }.reverse.slice(0, amountToDisplay)
         println("Exact --> Top most valuable users in this batch: %s".format(partialTopK.mkString("[", ",", "]")))

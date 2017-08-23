@@ -3,9 +3,10 @@ package spark_algebird
 import com.twitter.algebird.HyperLogLog._
 import com.twitter.algebird.{HLL, HyperLogLogMonoid}
 import org.apache.spark.streaming.dstream.{DStream, ReceiverInputDStream}
-import twitter4j.Status  //necessary for implicit conversion Long => Array[Byte]
+import twitter4j.Status //necessary for implicit conversion Long => Array[Byte]
 
 object SparkAlgebirdHLL {
+
   /**
     * Precision for HLL algoritm, computed as 1.04/sqrt(2^{bits})
     */
@@ -24,12 +25,15 @@ object SparkAlgebirdHLL {
   def distinctUsers(tweets: ReceiverInputDStream[Status]): Unit = {
     val users = tweets.map(status => status.getUser.getId)
 
-    val approxUsers: DStream[HLL] = users.mapPartitions(ids => {
-      val hll = new HyperLogLogMonoid(HLL_PRECISION)
-      ids.map(id => hll(id))
-    }).reduce(_ + _)
+    val approxUsers: DStream[HLL] = users
+      .mapPartitions(ids => {
+        val hll = new HyperLogLogMonoid(HLL_PRECISION)
+        ids.map(id => hll(id))
+      })
+      .reduce(_ + _)
 
-    val exactUsers: DStream[Set[Long]] = users.map(id => Set(id)).reduce(_ ++ _)
+    val exactUsers: DStream[Set[Long]] =
+      users.map(id => Set(id)).reduce(_ ++ _)
 
     approximateUserCountHLL(approxUsers)
     exactUserCount(exactUsers)
