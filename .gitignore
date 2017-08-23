@@ -5,3 +5,5 @@
 /project/target/
 /checkpoint/
 /ch2/
+/project/project/target/config-classes/*.cache
+/.history
