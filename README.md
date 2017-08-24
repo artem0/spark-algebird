@@ -11,6 +11,7 @@ based on [Bloom filter algorithm](https://en.wikipedia.org/wiki/Bloom_filter) al
 was obtained from bloom filter is checking via naive contains method. 
 5) Example with [Q Tree](https://twitter.github.io/algebird/datatypes/approx/q_tree.html) - the approximation of
  Map[Double,A:Monoid] suitable for range queries, quantile queries and etc 
+6) Usage of MinHash/LSH, HyperLogLog, Bloom filter, Count-min sketch on Scala's collections
 
 For launching demo: 
 `sbt runMain spark_algebird.demo.*`
